@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "DigitaLinx HDMI Matrix",
+        "description": "Configure your Liberty DigitaLinx DL-S42-H2 (or compatible) HDMI matrix switcher.",
+        "data": {
+          "host": "IP Address",
+          "port": "TCP Port (default 23)",
+          "name": "Device Name",
+          "num_inputs": "Number of HDMI Inputs",
+          "num_outputs": "Number of HDMI Outputs"
+        }
+      },
+      "input_names": {
+        "title": "Name Your HDMI Inputs",
+        "description": "Give each HDMI input a friendly name (e.g. Apple TV, Shield, PS5).",
+        "data": {
+          "input_1": "Input 1 Name",
+          "input_2": "Input 2 Name",
+          "input_3": "Input 3 Name",
+          "input_4": "Input 4 Name"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the matrix switcher. Check the IP address and port.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "DigitaLinx Matrix Options",
+        "data": {
+          "input_1": "Input 1 Name",
+          "input_2": "Input 2 Name",
+          "input_3": "Input 3 Name",
+          "input_4": "Input 4 Name"
+        }
+      }
+    }
+  }
+}

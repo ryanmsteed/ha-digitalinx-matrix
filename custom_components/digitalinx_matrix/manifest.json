@@ -1,0 +1,11 @@
+{
+  "domain": "digitalinx_matrix",
+  "name": "DigitaLinx HDMI Matrix",
+  "codeowners": ["@ryanmsteed"],
+  "config_flow": true,
+  "documentation": "https://github.com/ryanmsteed/ha-digitalinx-matrix",
+  "integration_type": "device",
+  "iot_class": "assumed_state",
+  "issue_tracker": "https://github.com/ryanmsteed/ha-digitalinx-matrix/issues",
+  "version": "1.0.0"
+}
