@@ -6,6 +6,10 @@ Source selection routes an HDMI input to this output.
 State is assumed from SET SW command confirmations since
 GET SW is not supported on firmware 3.6. The entity is
 marked assumed_state so HA shows toggle-style controls.
+
+Availability follows the shared client: it goes False only after a command
+(or the periodic keepalive) fails even after a reconnect-and-retry, and goes
+back to True by itself once the matrix answers again.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ from homeassistant.components.media_player import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -97,11 +102,14 @@ class DigitaLinxOutputZone(MediaPlayerEntity):
         self._reverse_source_map = {v: k for k, v in source_map.items()}
         self._entry = entry
         self._current_input: int | None = None
-        self._available = True
 
         self._attr_unique_id = f"{entry.entry_id}_output_{output_num}"
         self._attr_name = f"Output {output_num}"
         self._attr_source_list = list(source_map.keys())
+
+    async def async_added_to_hass(self) -> None:
+        """Refresh state whenever the matrix goes unavailable or comes back."""
+        self.async_on_remove(self._client.add_listener(self.async_write_ha_state))
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -115,8 +123,8 @@ class DigitaLinxOutputZone(MediaPlayerEntity):
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
-        return self._available
+        """Return True if the matrix is reachable."""
+        return self._client.available
 
     @property
     def state(self) -> MediaPlayerState:
@@ -149,17 +157,21 @@ class DigitaLinxOutputZone(MediaPlayerEntity):
         )
         try:
             response = await self._client.set_switch(input_num, self._output_num)
-            # Confirmation format: "SW in{i} out{o}"
-            # Parse to verify the switch was accepted
-            confirmed_input = self._client.parse_switch_response(response)
-            if confirmed_input is not None:
-                self._current_input = confirmed_input
-            else:
-                # Trust the command even if we can't parse the response
-                self._current_input = input_num
-            self._available = True
         except DigitaLinxConnectionError as err:
-            _LOGGER.error("Failed to switch: %s", err)
-            self._available = False
+            # The client already retried once after reconnecting. Surface the
+            # failure to the caller (UI toast / automation trace) and leave the
+            # assumed source untouched.
+            raise HomeAssistantError(
+                f"Could not switch output {self._output_num} to {source}: {err}"
+            ) from err
+
+        # Confirmation format: "SW in{i} out{o}"
+        # Parse to verify the switch was accepted
+        confirmed_input = self._client.parse_switch_response(response)
+        if confirmed_input is not None:
+            self._current_input = confirmed_input
+        else:
+            # Trust the command even if we can't parse the response
+            self._current_input = input_num
 
         self.async_write_ha_state()
